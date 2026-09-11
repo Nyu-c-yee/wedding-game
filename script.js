@@ -9,11 +9,15 @@
 (() => {
   const STORAGE_KEY = "wedding-puzzle-progress-v1";
   const LANG_KEY = "wedding-puzzle-lang-v1";
+  // 進度自動過期時間：超過這個時間沒再打開頁面，
+  // 下次打開會自動視為新的一局（等於幫賓客的手機自動清掉舊資料）。
+  // 想改成「隔天就洗掉」可以改成 1000 * 60 * 60 * 24；
+  // 想留久一點給拖到後幾天才補玩的人，可以拉長天數。
+  const PROGRESS_EXPIRY_MS = 1000 * 60 * 60 * 24 * 3; // 目前設 3 天
 
   /** ---- 語言系統 ----
-   * 支援三種「語言」：
+   * 支援兩種「語言」：
    *   zh     — 繁體中文，原文照顯示
-   *   dog    — 狗狗語彩蛋，所有文字變成「汪」
    *   decode — 看懂亂碼：有 decodedPrompt 的關卡會改顯示解碼後的題目
    */
   const UI_STRINGS = {
@@ -27,7 +31,6 @@
     resetBtn: "重設進度",
     resetConfirm: "確定要清空目前的解謎進度嗎？這個動作無法復原。",
     langNameZh: "中文",
-    langNameDog: "狗狗語",
     langNameDecode: "看懂亂碼",
     feedbackCorrect: "答對了！翻開下一頁…",
     feedbackWrong: "還不太對，再想想看？",
@@ -37,7 +40,7 @@
   function loadLang() {
     try {
       const saved = localStorage.getItem(LANG_KEY);
-      return saved === "dog" || saved === "decode" ? saved : "zh";
+      return saved === "decode" ? saved : "zh";
     } catch (e) {
       return "zh";
     }
@@ -53,15 +56,9 @@
 
   let lang = loadLang();
 
-  /** 狗狗語：把每個非空白字元都換成「汪」，換行與空白保留排版 */
-  function toDogSpeak(str) {
-    if (!str) return str;
-    return str.replace(/[^\s]/g, "汪");
-  }
-
-  /** 依目前語言決定要不要把文字轉成狗狗語（decode 模式的字串本身已經是「解碼後」的正常文字，不再額外處理） */
+  /** 目前語言不影響一般文字的顯示方式，保留這層包裝是方便未來要加其他語言時直接擴充 */
   function localize(str) {
-    return lang === "dog" ? toDogSpeak(str) : str;
+    return str;
   }
 
   /** 依目前語言，決定這個關卡實際要顯示的題目文字 */
@@ -90,7 +87,13 @@
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return null;
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // 沒有時間戳記，或距離上次更新已經超過設定的天數 → 視為過期，自動清掉
+      if (!parsed.updatedAt || Date.now() - parsed.updatedAt > PROGRESS_EXPIRY_MS) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+      return parsed;
     } catch (e) {
       return null;
     }
@@ -98,6 +101,7 @@
 
   function saveProgress(state) {
     try {
+      state.updatedAt = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
       // localStorage 不可用（例如無痕模式），遊戲仍可玩，只是重整會重來
@@ -130,7 +134,6 @@
     settingsMenuTitle: document.querySelector("#setting-screen .menu"),
     settingsLabel: document.querySelector("#setting-screen .settings-label"),
     langZhBtn: document.getElementById("lang-zh-btn"),
-    langDogBtn: document.getElementById("lang-dog-btn"),
     langDecodeBtn: document.getElementById("lang-decode-btn"),
     startBtn: document.getElementById("start-btn"),
     restartBtn: document.getElementById("restart-btn"),
@@ -141,6 +144,9 @@
     levelPrompt: document.getElementById("level-prompt"),
     answerInput: document.getElementById("answer-input"),
     matchContainer: document.getElementById("match-container"),
+    circuitContainer: document.getElementById("circuit-container"),
+    circuitPanel: document.getElementById("circuit-panel"),
+    circuitResetBtn: document.getElementById("circuit-reset-btn"),
     submitBtn: document.getElementById("submit-btn"),
     feedback: document.getElementById("feedback"),
     hintBtn: document.getElementById("hint-btn"),
@@ -295,6 +301,49 @@
     }
   }
 
+  /** ---- 第二關這種「連動按鈕」電路謎題 ---- */
+  let circuitLights = [];
+
+  function renderCircuitLights() {
+    const btns = el.circuitPanel.querySelectorAll(".circuit-light");
+    btns.forEach((btn, idx) => {
+      btn.classList.toggle("lit", circuitLights[idx]);
+    });
+  }
+
+  function toggleCircuit(lv, pressedIndex) {
+    const linked = (lv.circuitLinks && lv.circuitLinks[pressedIndex]) || [pressedIndex];
+    linked.forEach((idx) => {
+      circuitLights[idx - 1] = !circuitLights[idx - 1];
+    });
+    renderCircuitLights();
+    if (circuitLights.length > 0 && circuitLights.every(Boolean)) {
+      onLevelSolved(lv.successMessage);
+    }
+  }
+
+  function renderCircuitPuzzle(lv) {
+    const count = Object.keys(lv.circuitLinks || {}).length || 5;
+    circuitLights = new Array(count).fill(false);
+    el.circuitPanel.innerHTML = "";
+
+    for (let i = 1; i <= count; i += 1) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "circuit-light";
+      btn.textContent = String(i);
+      btn.addEventListener("click", () => toggleCircuit(lv, i));
+      el.circuitPanel.appendChild(btn);
+    }
+
+    renderCircuitLights();
+  }
+
+  el.circuitResetBtn.addEventListener("click", () => {
+    circuitLights = circuitLights.map(() => false);
+    renderCircuitLights();
+  });
+
   /** 實際把這一關的題目內容（標題已提前設定）填進畫面，這一步不牽涉對話框 */
   function renderLevelContent() {
     const lv = levels[state.currentIndex];
@@ -309,17 +358,24 @@
       el.levelImage.removeAttribute("src");
     }
 
+    // 先把三種特殊作答模式都收起來，再依這一關的 type 打開需要的那一種
+    el.answerInput.hidden = true;
+    el.matchContainer.hidden = true;
+    el.matchContainer.innerHTML = "";
+    el.circuitContainer.hidden = true;
+    el.submitBtn.hidden = false;
+
     if (lv.type === "match") {
-      el.answerInput.hidden = true;
       el.matchContainer.hidden = false;
       renderMatchInputs(lv);
+    } else if (lv.type === "circuit") {
+      el.circuitContainer.hidden = false;
+      el.submitBtn.hidden = true; // 全部點亮會自動過關，不需要送出按鈕
+      renderCircuitPuzzle(lv);
     } else {
       el.answerInput.hidden = false;
-      el.matchContainer.hidden = true;
-      el.matchContainer.innerHTML = "";
+      el.answerInput.focus();
     }
-
-    el.answerInput.focus();
   }
 
   /** 進入一個新關卡：先清空畫面，若這關有 intro 對話就先播，播完才顯示題目 */
@@ -332,6 +388,8 @@
     el.answerInput.value = "";
     el.matchContainer.hidden = true;
     el.matchContainer.innerHTML = "";
+    el.circuitContainer.hidden = true;
+    el.circuitPanel.innerHTML = "";
     el.feedback.textContent = "";
     el.feedback.className = "feedback";
     renderSeals();
@@ -382,6 +440,22 @@
     return true;
   }
 
+  /** 這一關過關時共用的流程：顯示提示文字、記錄進度、延遲後進下一關或結局 */
+  function onLevelSolved(successMessage) {
+    el.feedback.textContent = localize(successMessage || UI_STRINGS.feedbackCorrect);
+    el.feedback.className = "feedback correct";
+    state.currentIndex += 1;
+    saveProgress(state);
+
+    setTimeout(() => {
+      if (state.currentIndex >= levels.length) {
+        finishGame();
+      } else {
+        enterLevel();
+      }
+    }, 700);
+  }
+
   function handleSubmit() {
     const lv = levels[state.currentIndex];
     let correct = false;
@@ -400,18 +474,7 @@
     }
 
     if (correct) {
-      el.feedback.textContent = localize(UI_STRINGS.feedbackCorrect);
-      el.feedback.className = "feedback correct";
-      state.currentIndex += 1;
-      saveProgress(state);
-
-      setTimeout(() => {
-        if (state.currentIndex >= levels.length) {
-          finishGame();
-        } else {
-          enterLevel();
-        }
-      }, 700);
+      onLevelSolved(lv.successMessage);
     } else {
       el.feedback.textContent = localize(UI_STRINGS.feedbackWrong);
       el.feedback.className = "feedback wrong";
@@ -476,7 +539,6 @@
   }
 
   el.langZhBtn.addEventListener("click", () => setLang("zh"));
-  el.langDogBtn.addEventListener("click", () => setLang("dog"));
   el.langDecodeBtn.addEventListener("click", () => setLang("decode"));
 
   el.settingsResetBtn.addEventListener("click", () => {
@@ -509,10 +571,8 @@
     el.settingsResetBtn.textContent = localize(UI_STRINGS.resetBtn);
 
     el.langZhBtn.textContent = localize(UI_STRINGS.langNameZh);
-    el.langDogBtn.textContent = localize(UI_STRINGS.langNameDog);
     el.langDecodeBtn.textContent = localize(UI_STRINGS.langNameDecode);
     el.langZhBtn.classList.toggle("active", lang === "zh");
-    el.langDogBtn.classList.toggle("active", lang === "dog");
     el.langDecodeBtn.classList.toggle("active", lang === "decode");
   }
 
