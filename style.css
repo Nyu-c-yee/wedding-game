@@ -1,0 +1,529 @@
+:root {
+  /* ---- 色彩 Token ---- */
+  --color-ink: #1c2440;         /* 主背景：深夜藍墨 */
+  --color-ink-deep: #12172b;    /* 背景漸層深端 */
+  --color-paper: #f6f0e4;       /* 信紙／卡片底色 */
+  --color-paper-edge: #e8dcc3;  /* 信紙邊緣陰影 */
+  --color-gold: #c8a24a;        /* 燙金強調色 */
+  --color-rose: #b9585a;        /* 印泥／喜氣紅（用於正確、重點） */
+  --color-ink-text: #2a2416;    /* 信紙上的深色文字 */
+  --color-muted: #8b8375;       /* 次要文字 */
+
+  --font-display: "Noto Serif TC", "STSong", "PingFang TC", serif;
+  --font-body: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC",
+    sans-serif;
+
+  --radius-card: 6px;
+  --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-paper);
+  background: radial-gradient(
+      circle at 50% -10%,
+      #2a3358 0%,
+      var(--color-ink) 45%,
+      var(--color-ink-deep) 100%
+    );
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* 背景細微星點裝飾，營造夜晚燭光氛圍，不喧賓奪主 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(
+      1px 1px at 20% 30%,
+      rgba(200, 162, 74, 0.35) 0,
+      transparent 50%
+    ),
+    radial-gradient(1px 1px at 70% 60%, rgba(200, 162, 74, 0.25) 0, transparent 50%),
+    radial-gradient(1.5px 1.5px at 85% 20%, rgba(200, 162, 74, 0.3) 0, transparent 50%),
+    radial-gradient(1px 1px at 40% 80%, rgba(200, 162, 74, 0.2) 0, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-paper);
+  color: var(--color-ink-text);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 36px 28px 28px;
+  border: 1px solid var(--color-paper-edge);
+}
+
+.card::before {
+  /* 信紙頂部的細金線，暗示這是一封請帖 */
+  content: "";
+  display: block;
+  height: 3px;
+  width: 48px;
+  background: var(--color-gold);
+  margin: 0 auto 20px;
+  border-radius: 2px;
+}
+
+.eyebrow {
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.couple-names {
+  display: block;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 24px;
+  margin-bottom: 24px;
+  color: var(--color-ink-text);
+}
+
+h1.title,
+h2.title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  text-align: center;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.intro-text,
+.level-prompt,
+.final-message {
+  font-size: 15px;
+  line-height: 1.9;
+  white-space: pre-line;
+  color: var(--color-ink-text);
+  margin-bottom: 24px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--color-ink);
+  color: var(--color-gold);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 18px rgba(28, 36, 64, 0.35);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--color-paper-edge);
+  color: var(--color-muted);
+  margin-top: 12px;
+}
+
+/* ---- 遊戲畫面 ---- */
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--color-muted);
+  letter-spacing: 0.05em;
+}
+
+.seals {
+  display: flex;
+  gap: 6px;
+}
+
+.seal {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-paper-edge);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.seal.sealed {
+  background: var(--color-rose);
+  transform: scale(1.15);
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: var(--font-body);
+  border: 1px solid var(--color-paper-edge);
+  border-radius: 4px;
+  background: #fffdf8;
+  color: var(--color-ink-text);
+  margin-bottom: 12px;
+}
+
+input[type="text"]:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+.feedback {
+  min-height: 20px;
+  font-size: 13px;
+  margin: 4px 0 16px;
+}
+
+.feedback.correct {
+  color: #3a7a4a;
+}
+
+.feedback.wrong {
+  color: var(--color-rose);
+}
+
+.hint-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.hint-btn {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px;
+}
+
+.hint-text {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--color-muted);
+  background: #efe8d8;
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+.hint-text[hidden] {
+  display: none;
+}
+
+/* 答錯時的輕微搖晃回饋，語氣溫和不刺眼 */
+@keyframes shake {
+  10%,
+  90% { transform: translateX(-2px); }
+  20%,
+  80% { transform: translateX(3px); }
+  30%,
+  50%,
+  70% { transform: translateX(-5px); }
+  40%,
+  60% { transform: translateX(5px); }
+}
+
+.shake {
+  animation: shake 0.5s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shake {
+    animation: none;
+  }
+  .seal {
+    transition: none;
+  }
+}
+
+.final-time {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-muted);
+  margin-bottom: 20px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ---- 設置頁面 ---- */
+/* .prase 沿用信紙卡片的外觀，跟其他畫面視覺一致 */
+.prase {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-paper);
+  color: var(--color-ink-text);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 36px 28px 28px;
+  border: 1px solid var(--color-paper-edge);
+}
+
+.menu {
+  font-family: var(--font-display);
+  font-size: 20px;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.language-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--color-paper-edge);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-ink-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.15s ease;
+}
+
+.language-btn:hover {
+  background: #efe8d8;
+}
+
+.language-btn.danger {
+  color: var(--color-rose);
+  border-color: var(--color-rose);
+}
+
+.language-btn.danger:hover {
+  background: #f6e6e2;
+}
+
+.settings-label {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  margin: 4px 0 8px;
+}
+
+.lang-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lang-option {
+  flex: 1 1 auto;
+  padding: 10px 12px;
+  border: 1px solid var(--color-paper-edge);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-ink-text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.lang-option:hover {
+  background: #efe8d8;
+}
+
+.lang-option.active {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-gold);
+}
+
+/* ---- 第六關配對題：下拉選單 ---- */
+.match-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.match-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-paper-edge);
+  border-radius: 4px;
+  padding: 8px 10px;
+  background: #fffdf8;
+}
+
+.match-item-label {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.match-item select {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-ink-text);
+}
+
+.match-item select:focus {
+  outline: none;
+}
+
+/* ---- 齒輪按鈕：固定在畫面右上角，任何主畫面都能點 ---- */
+.settings-toggle {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(200, 162, 74, 0.4);
+  background: rgba(28, 36, 64, 0.6);
+  color: var(--color-gold);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+
+.settings-toggle:hover {
+  background: rgba(28, 36, 64, 0.85);
+}
+
+/* ---- 關卡圖片（例如腳印數謎題）---- */
+.level-image {
+  display: block;
+  width: 100%;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  background: #fffdf8;
+  border: 1px solid var(--color-paper-edge);
+}
+
+/* ---- 2D 對話框 ---- */
+.dialogue-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 12, 24, 0.45);
+}
+
+.dialogue-box {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.dialogue-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-paper);
+  border: 3px solid var(--color-gold);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.dialogue-panel {
+  position: relative;
+  flex: 1;
+  background: var(--color-paper);
+  border: 1px solid var(--color-paper-edge);
+  border-radius: 10px;
+  padding: 14px 40px 16px 16px;
+  box-shadow: var(--shadow-card);
+  min-height: 84px;
+}
+
+.dialogue-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-rose);
+  margin-bottom: 4px;
+}
+
+.dialogue-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-ink-text);
+  white-space: pre-line;
+  min-height: 1.7em;
+}
+
+.dialogue-next {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  border: none;
+  background: none;
+  color: var(--color-gold);
+  font-size: 14px;
+  cursor: pointer;
+  animation: dialogue-bounce 1s infinite;
+}
+
+@keyframes dialogue-bounce {
+  0%,
+  100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogue-next {
+    animation: none;
+  }
+}
