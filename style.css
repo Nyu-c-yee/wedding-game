@@ -414,6 +414,57 @@ input[type="text"]:focus {
   outline: none;
 }
 
+/* ---- 第二關：連動按鈕電路謎題 ---- */
+.circuit-container {
+  margin-bottom: 12px;
+}
+
+.circuit-panel {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  background: var(--color-ink);
+  border: 1px solid var(--color-gold);
+  border-radius: 14px;
+  padding: 26px 16px;
+  margin-bottom: 12px;
+}
+
+.circuit-light {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 3px solid rgba(246, 240, 228, 0.35);
+  background: #2a3358;
+  color: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease,
+    border-color 0.2s ease;
+}
+
+.circuit-light:active {
+  transform: scale(0.93);
+}
+
+.circuit-light.lit {
+  background: var(--color-gold);
+  color: var(--color-ink);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 18px 4px rgba(200, 162, 74, 0.55);
+}
+
+.circuit-reset {
+  display: block;
+  width: auto;
+  margin: 0 auto;
+  padding: 8px 22px;
+  font-size: 13px;
+}
+
 /* ---- 齒輪按鈕：固定在畫面右上角，任何主畫面都能點 ---- */
 .settings-toggle {
   position: fixed;
