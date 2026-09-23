@@ -2,8 +2,7 @@
  * ============================================
  * 婚禮解謎遊戲 — 遊戲邏輯
  * ============================================
- * 一般情況下不需要修改這個檔案。
- * 想換題目、答案、提示，請改 config.js。
+
  */
 
 (() => {
@@ -160,6 +159,8 @@
     dialogueName: document.getElementById("dialogue-name"),
     dialogueText: document.getElementById("dialogue-text"),
     dialogueNextBtn: document.getElementById("dialogue-next-btn"),
+    imageLightbox: document.getElementById("image-lightbox"),
+    lightboxImg: document.getElementById("lightbox-img"),
   };
 
   /** ---- 2D 對話框系統 ----
@@ -172,14 +173,18 @@
   let typeTimer = null;
   let mouthTimer = null;
   let pendingFullText = "";
+  // 這兩個是「這次對話」實際要用的頭像，預設等於 DLG 的設定，
+  // 但 showDialogue() 可以用 avatar 參數臨時換成別張圖（例如提示用的表情）
+  let currentTalkImage = DLG.talkImage;
+  let currentIdleImage = DLG.idleImage;
 
   function setAvatar(talking) {
-    if (!DLG.talkImage) return;
-    if (DLG.idleImage) {
-      el.dialogueAvatar.src = talking ? DLG.talkImage : DLG.idleImage;
+    if (!currentTalkImage) return;
+    if (currentIdleImage) {
+      el.dialogueAvatar.src = talking ? currentTalkImage : currentIdleImage;
     } else {
       // 只有一張頭像時，全程顯示同一張，不做嘴巴開合動畫
-      el.dialogueAvatar.src = DLG.talkImage;
+      el.dialogueAvatar.src = currentTalkImage;
     }
   }
 
@@ -190,7 +195,7 @@
     el.dialogueText.textContent = "";
     setAvatar(true);
 
-    if (DLG.idleImage) {
+    if (currentIdleImage) {
       let mouthOpen = true;
       mouthTimer = setInterval(() => {
         mouthOpen = !mouthOpen;
@@ -223,12 +228,17 @@
     typeText(localize(line));
   }
 
-  /** 開啟對話模式，依序播放 lines；全部播完後呼叫 onComplete（若有） */
-  function showDialogue(lines, { onComplete } = {}) {
+  /** 開啟對話模式，依序播放 lines；全部播完後呼叫 onComplete（若有）
+   *  avatar（選填）：這次對話要用哪張頭像，不填就用 DLG.talkImage / DLG.idleImage
+   */
+  function showDialogue(lines, { onComplete, avatar } = {}) {
     if (!lines || lines.length === 0) {
       if (onComplete) onComplete();
       return;
     }
+    currentTalkImage = avatar || DLG.talkImage;
+    // 有指定專用頭像時，就單純靜態顯示那一張，不跑嘴巴開合動畫
+    currentIdleImage = avatar ? null : DLG.idleImage;
     el.dialogueName.textContent = localize(DLG.speakerName || "");
     dialogueQueue = lines.slice();
     dialogueOnComplete = onComplete || null;
@@ -247,6 +257,19 @@
     } else {
       advanceDialogue();
     }
+  });
+
+  /** ---- 題目圖片點擊放大 ---- */
+  el.levelImage.addEventListener("click", () => {
+    if (!el.levelImage.src) return;
+    el.lightboxImg.src = el.levelImage.src;
+    el.lightboxImg.alt = el.levelImage.alt;
+    el.imageLightbox.hidden = false;
+  });
+
+  el.imageLightbox.addEventListener("click", () => {
+    el.imageLightbox.hidden = true;
+    el.lightboxImg.removeAttribute("src");
   });
 
   function formatElapsed(ms) {
@@ -513,7 +536,7 @@
       state.hintsUsed.push(lv.id);
       saveProgress(state);
     }
-    showDialogue([lv.hint || ""]);
+    showDialogue([lv.hint || ""], { avatar: DLG.hintImage });
   });
 
   el.restartBtn.addEventListener("click", () => {
