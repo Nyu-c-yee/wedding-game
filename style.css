@@ -495,6 +495,32 @@ input[type="text"]:focus {
   margin-bottom: 16px;
   background: #fffdf8;
   border: 1px solid var(--color-paper-edge);
+  cursor: zoom-in;
+  transition: opacity 0.15s ease;
+}
+
+.level-image:active {
+  opacity: 0.85;
+}
+
+/* ---- 圖片放大檢視（點題目圖片全螢幕看） ---- */
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 12, 24, 0.86);
+  cursor: zoom-out;
+}
+
+.image-lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 6px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 /* ---- 2D 對話框 ---- */
